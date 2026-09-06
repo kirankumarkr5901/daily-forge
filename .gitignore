@@ -1,0 +1,45 @@
+# Build output
+build/
+dist/
+out-tsc/
+.gradle/
+target/
+
+# Dependencies
+node_modules/
+
+# Local database. File-mode H2 lives here so streaks survive a restart; it is local
+# state, never committed.
+.data/
+
+# Environment and secrets. Nothing in here reaches the repository.
+.env
+.env.*
+!.env.example
+*.local
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Angular / test caches
+.angular/
+coverage/
+playwright-report/
+test-results/
+
+# Capacitor generated Android project is committed from M9; its build output is not
+android/app/build/
+android/.gradle/
+
+# Impeccable review captures are transient evidence, not source.
+.impeccable/review/
+
+# Local machine settings, not project configuration.
