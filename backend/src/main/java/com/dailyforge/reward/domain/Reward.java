@@ -2,6 +2,8 @@ package com.dailyforge.reward.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -30,6 +32,10 @@ public class Reward {
     @Column(name = "icon", nullable = false, length = 40)
     private String icon;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tier", nullable = false, length = 10)
+    private RewardTier tier;
+
     @Column(name = "is_repeatable", nullable = false)
     private boolean repeatable;
 
@@ -49,16 +55,33 @@ public class Reward {
         // for JPA
     }
 
-    public static Reward create(UUID userId, String name, int cost, String icon, boolean repeatable, Integer stock) {
+    public static Reward create(
+            UUID userId, String name, int cost, String icon, RewardTier tier, boolean repeatable, Integer stock) {
         Reward reward = new Reward();
         reward.id = UUID.randomUUID();
         reward.userId = userId;
         reward.name = name;
         reward.cost = cost;
         reward.icon = icon;
+        reward.tier = tier;
         reward.repeatable = repeatable;
         reward.stock = stock;
         return reward;
+    }
+
+    /**
+     * Edits the definition, never the history (owner feedback: "Rewards also should be
+     * editable"). Past redemptions keep the cost they were actually charged — that is a
+     * ledger fact, and the ledger is append-only (non-negotiable #2) — so changing the
+     * price here only ever affects the next redemption, not one already made.
+     */
+    public void update(String name, int cost, String icon, RewardTier tier, boolean repeatable, Integer stock) {
+        this.name = name;
+        this.cost = cost;
+        this.icon = icon;
+        this.tier = tier;
+        this.repeatable = repeatable;
+        this.stock = stock;
     }
 
     public void decrementStock() {
@@ -117,6 +140,10 @@ public class Reward {
 
     public String getIcon() {
         return icon;
+    }
+
+    public RewardTier getTier() {
+        return tier;
     }
 
     public boolean isRepeatable() {

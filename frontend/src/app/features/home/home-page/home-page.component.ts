@@ -4,17 +4,20 @@ import { LucideAngularModule, Quote as QuoteIcon, Target } from 'lucide-angular'
 
 import { AuthSheetService } from '../../../core/auth/auth-sheet.service';
 import { SessionStore } from '../../../core/auth/session.store';
+import { Goal } from '../../../core/goal/goal.types';
 import { HomeApi } from '../../../core/home/home.api';
 import { HomeSummary } from '../../../core/home/home.types';
+import { PointsStore } from '../../../core/points/points.store';
 import { LedgerEntry, PointsCategory } from '../../../core/points/points.types';
 import { LogicalDate, formatLong } from '../../../core/time/logical-date';
 import { DfButtonComponent } from '../../../shared/ui/df-button/df-button.component';
 import { DfCardComponent } from '../../../shared/ui/df-card/df-card.component';
 import { DfEmptyStateComponent } from '../../../shared/ui/df-empty-state/df-empty-state.component';
-import { DfScorePillComponent } from '../../../shared/ui/df-score-pill/df-score-pill.component';
 import { DfSkeletonComponent } from '../../../shared/ui/df-skeleton/df-skeleton.component';
-import { DayDetailSheetComponent } from '../day-detail-sheet/day-detail-sheet.component';
+import { DayDetailSheetComponent } from '../../../shared/day-detail-sheet/day-detail-sheet.component';
 import { HeatmapComponent } from '../heatmap/heatmap.component';
+
+type Period = 'today' | 'thisWeek' | 'thisMonth';
 
 const CATEGORY_LABELS: Record<PointsCategory, string> = {
   WORKOUT: 'Workout',
@@ -33,9 +36,14 @@ interface DayGroup {
 }
 
 /**
- * Home (spec §8.1). Goal progress and job metrics are omitted entirely — both modules
- * land at M7, and the spec's own rule is to hide those sections "entirely when none"
- * exist, which an absent field from the backend already accomplishes.
+ * Home (spec §8.1). Job metrics are still omitted entirely (spec's own "hidden entirely
+ * when none exist" rule, which an absent field already accomplishes); active goals are
+ * now shown, the one owner feedback specifically named as missing.
+ *
+ * The score card no longer repeats the total the header pill already shows — today,
+ * this week, and this month are each clickable, switching which one's own category
+ * breakdown renders below (owner feedback: "It's category score split should be shown
+ * in the below" for whichever period is selected, not always the month).
  */
 @Component({
   selector: 'df-home-page',
@@ -44,7 +52,6 @@ interface DayGroup {
     DfButtonComponent,
     DfCardComponent,
     DfEmptyStateComponent,
-    DfScorePillComponent,
     DfSkeletonComponent,
     DayDetailSheetComponent,
     HeatmapComponent,
@@ -58,6 +65,7 @@ export class HomePageComponent {
 
   protected readonly session = inject(SessionStore);
   protected readonly authSheet = inject(AuthSheetService);
+  protected readonly points = inject(PointsStore);
 
   protected readonly quoteIcon = QuoteIcon;
   protected readonly targetIcon = Target;
@@ -68,12 +76,21 @@ export class HomePageComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly summary = signal<HomeSummary | null>(null);
   protected readonly selectedDay = signal<LogicalDate | null>(null);
+  protected readonly selectedPeriod = signal<Period>('thisMonth');
+
+  protected readonly activeGoals = computed<Goal[]>(() => this.summary()?.activeGoals ?? []);
 
   protected readonly categoryBreakdown = computed(() => {
-    const byCategory = this.summary()?.score.byCategory;
-    if (!byCategory) {
+    const score = this.summary()?.score;
+    if (!score) {
       return [];
     }
+    const byCategory =
+      this.selectedPeriod() === 'today'
+        ? score.byCategoryToday
+        : this.selectedPeriod() === 'thisWeek'
+          ? score.byCategoryWeek
+          : score.byCategory;
     return (Object.entries(byCategory) as [PointsCategory, number][])
       .filter(([, value]) => value !== 0)
       .sort((a, b) => b[1] - a[1]);
@@ -117,12 +134,31 @@ export class HomePageComponent {
     this.error.set(null);
     try {
       this.summary.set(await firstValueFrom(this.api.summary()));
+      // The header pill and this page's own score card must never disagree — both read
+      // the shared store now, refreshed here so a stale header pill self-corrects the
+      // moment the visitor lands on Home.
+      void this.points.refresh();
     } catch {
       this.error.set('Could not load your home page. Check your connection and try again.');
     } finally {
       this.loading.set(false);
     }
   }
+
+  protected setPeriod(period: Period): void {
+    this.selectedPeriod.set(period);
+  }
+
+  protected readonly periodLabel = computed(() => {
+    switch (this.selectedPeriod()) {
+      case 'today':
+        return 'Today';
+      case 'thisWeek':
+        return 'This week';
+      default:
+        return 'This month';
+    }
+  });
 
   protected openDay(date: LogicalDate): void {
     this.selectedDay.set(date);
