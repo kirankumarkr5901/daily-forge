@@ -1,33 +1,66 @@
 .heatmap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: var(--space-1);
+  gap: var(--space-4);
+}
+
+.heatmap__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.heatmap__nav-arrow {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.heatmap__nav-arrow:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.heatmap__nav-arrow:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.heatmap__nav-arrow:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .heatmap__month-title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--ink-muted);
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .heatmap__weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  margin-bottom: 3px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
 .heatmap__week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  margin-bottom: 3px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
 }
 
 .heatmap__cell {
@@ -36,11 +69,23 @@
   display: grid;
   place-items: center;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   background: var(--earned-0);
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: var(--text-sm);
   cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.heatmap__cell:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+/* A day that earned nothing has no detail sheet worth opening (owner feedback), so it
+ * reads as a plain surface rather than a control: no pointer, no lift, but the same
+ * colour — it is still part of the month, not greyed out of it. */
+.heatmap__cell:disabled {
+  cursor: default;
 }
 
 .heatmap__cell--pad {
@@ -69,8 +114,16 @@
   color: var(--ink-on-solid);
 }
 
+/* A 10px glyph tucked into a 1px corner inset was effectively invisible at a glance —
+ * bumped in the template to 14px, and a small solid backdrop guarantees contrast here
+ * regardless of the cell's own heat colour, rather than relying on `currentColor`
+ * happening to read against whatever background that heat step painted. */
 .heatmap__glyph {
   position: absolute;
-  bottom: 1px;
-  right: 1px;
+  bottom: 2px;
+  right: 2px;
+  padding: 1px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  color: var(--ink-on-solid);
 }

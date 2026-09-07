@@ -42,29 +42,90 @@
     </div>
   }
 
+  @if (todayDate()) {
+    <df-card class="workouts-page__calendar-card">
+      <df-month-calendar
+        [today]="todayDate()!"
+        [valueByDate]="workoutDates()"
+        heading="History"
+        markedLabel="workout logged"
+        (cellSelected)="openHistoryDay($event)"
+      />
+    </df-card>
+  }
+
   @if (error(); as message) {
     <p class="workouts-page__error" role="alert">{{ message }}</p>
   }
 
-  <div class="workouts-page__cards">
-    @for (entry of sortedExercises(); track entry.exerciseId) {
-      <df-exercise-card
-        [entry]="entry"
-        (logRequested)="openLogSheetForCard(entry)"
-        (editSetRequested)="openEditSheet(entry, $event)"
-        (deleteSetRequested)="deleteSet($event)"
-      />
-    } @empty {
-      <df-empty-state
-        [icon]="targetIcon"
-        title="Nothing planned for this day"
-        body="Add an exercise to start logging, or manage your plans to fill this day in advance."
+  @if (availableMuscleGroups().length > 1) {
+    <div class="workouts-page__muscle-filter" role="group" aria-label="Filter by muscle group">
+      <button
+        type="button"
+        class="workouts-page__muscle-chip"
+        [class.workouts-page__muscle-chip--selected]="muscleFilter() === null"
+        (click)="setMuscleFilter(null)"
       >
-        <button dfButton type="button" variant="primary" (click)="openAddExercise()">
-          <lucide-icon [img]="plusIcon" [size]="16" aria-hidden="true" />
-          Add exercise
+        All
+      </button>
+      @for (group of availableMuscleGroups(); track group) {
+        <button
+          type="button"
+          class="workouts-page__muscle-chip"
+          [class.workouts-page__muscle-chip--selected]="muscleFilter() === group"
+          (click)="setMuscleFilter(group)"
+        >
+          {{ group }}
         </button>
-      </df-empty-state>
+      }
+    </div>
+  }
+
+  <div class="workouts-page__cards">
+    @if (muscleGroupSections().length > 1) {
+      @for (section of muscleGroupSections(); track section.group) {
+        <h2 class="workouts-page__group-title">{{ section.group }}</h2>
+        @for (entry of section.exercises; track entry.exerciseId) {
+          <df-exercise-card
+            [entry]="entry"
+            (logRequested)="openLogSheetForCard(entry)"
+            (editSetRequested)="openEditSheet(entry, $event)"
+            (deleteSetRequested)="deleteSet($event)"
+            (historyRequested)="openHistorySheet(entry)"
+          />
+        }
+      }
+    } @else {
+      @for (entry of filteredExercises(); track entry.exerciseId) {
+        <df-exercise-card
+          [entry]="entry"
+          (logRequested)="openLogSheetForCard(entry)"
+          (editSetRequested)="openEditSheet(entry, $event)"
+          (deleteSetRequested)="deleteSet($event)"
+          (historyRequested)="openHistorySheet(entry)"
+        />
+      } @empty {
+        @if (sortedExercises().length > 0) {
+          <df-empty-state
+            [icon]="targetIcon"
+            title="Nothing for that muscle group today"
+            body="Try a different filter, or show every exercise."
+          >
+            <button dfButton type="button" variant="secondary" (click)="setMuscleFilter(null)">Show all</button>
+          </df-empty-state>
+        } @else {
+          <df-empty-state
+            [icon]="targetIcon"
+            title="Nothing planned for this day"
+            body="Add an exercise to start logging, or manage your plans to fill this day in advance."
+          >
+            <button dfButton type="button" variant="primary" (click)="openAddExercise()">
+              <lucide-icon [img]="plusIcon" [size]="16" aria-hidden="true" />
+              Add exercise
+            </button>
+          </df-empty-state>
+        }
+      }
     }
   </div>
 
@@ -91,10 +152,27 @@
 
 <df-exercise-picker-sheet [open]="pickerOpen()" (closed)="pickerOpen.set(false)" (picked)="onExercisePicked($event)" />
 
+<df-exercise-history-sheet
+  [open]="historySheetOpen()"
+  [exerciseId]="historyContext()?.id ?? null"
+  [exerciseName]="historyContext()?.name ?? ''"
+  [equipment]="historyContext()?.equipment ?? 'BARBELL'"
+  (closed)="closeHistorySheet()"
+/>
+
 <df-plan-manager-sheet
   [open]="planManagerOpen()"
   (closed)="planManagerOpen.set(false)"
   (changed)="onPlansChanged()"
 />
 
+<df-day-detail-sheet
+  [date]="historyDay()"
+  [only]="workoutCategories"
+  totalNoun="workout points"
+  (closed)="closeHistoryDay()"
+/>
+
 <df-rest-timer />
+
+<df-celebration [trigger]="celebrationTrigger()" label="Session complete!" />
