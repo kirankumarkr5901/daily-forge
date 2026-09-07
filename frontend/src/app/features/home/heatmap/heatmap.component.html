@@ -1,7 +1,28 @@
-<div class="heatmap" role="group" aria-label="Activity heatmap, last 12 months">
-  @for (month of months(); track month.label) {
-    <div class="heatmap__month">
+<div class="heatmap" role="group" aria-label="Activity heatmap">
+  @if (viewedMonth(); as month) {
+    <div class="heatmap__nav">
+      <button
+        type="button"
+        class="heatmap__nav-arrow"
+        [disabled]="!canGoOlder()"
+        aria-label="Previous month"
+        (click)="olderMonth()"
+      >
+        <lucide-icon [img]="prevIcon" [size]="18" aria-hidden="true" />
+      </button>
       <h3 class="heatmap__month-title">{{ month.label }}</h3>
+      <button
+        type="button"
+        class="heatmap__nav-arrow"
+        [disabled]="!canGoNewer()"
+        aria-label="Next month"
+        (click)="newerMonth()"
+      >
+        <lucide-icon [img]="nextIcon" [size]="18" aria-hidden="true" />
+      </button>
+    </div>
+
+    <div class="heatmap__month">
       <div class="heatmap__weekdays" aria-hidden="true">
         <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
       </div>
@@ -14,11 +35,12 @@
                 class="heatmap__cell"
                 [attr.data-heat]="heatStep(summaryFor(date))"
                 [attr.aria-label]="ariaLabel(date)"
+                [disabled]="!hasScoringActivity(date)"
                 (click)="select(date)"
               >
                 <span class="heatmap__day-number" aria-hidden="true">{{ dayNumber(date) }}</span>
                 @if (iconFor(summaryFor(date)?.state); as icon) {
-                  <lucide-icon class="heatmap__glyph" [img]="icon" [size]="10" aria-hidden="true" />
+                  <lucide-icon class="heatmap__glyph" [img]="icon" [size]="14" aria-hidden="true" />
                 }
               </button>
             } @else {
