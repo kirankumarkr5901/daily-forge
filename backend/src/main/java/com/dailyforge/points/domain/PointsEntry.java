@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * One line in the ledger. Immutable and append-only (spec §5.1, and PRODUCT.md's
- * non-negotiable #2): nothing in this codebase may update {@code amount} or delete a
+ * invariant 2): nothing in this codebase may update {@code amount} or delete a
  * row. An undo is a second row whose {@code reversesId} points at the first.
  *
  * There is deliberately no setter for {@code amount}, {@code category}, {@code ruleCode}
