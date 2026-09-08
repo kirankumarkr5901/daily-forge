@@ -8,9 +8,12 @@ A manual-logging fitness and habit tracker where every action converts to points
 ## Commands
 ```bash
 # backend
-cd backend && ./gradlew bootRun          # http://localhost:8080
-./gradlew test                            # unit + slice tests
-./gradlew flywayInfo
+cd backend && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun   # http://localhost:8080
+./gradlew check                           # unit + slice tests (bare `test` skips some)
+# Migrations run on boot. To inspect them without booting, use the Flyway CLI —
+# there is no Flyway Gradle plugin in this build:
+docker run --rm -v "$PWD/backend/src/main/resources/db/migration:/flyway/sql:ro" \
+  redgate/flyway:11 -url=<jdbc-url> -user=<u> -password=<p> info
 
 # frontend
 cd frontend && npm start                  # http://localhost:4200
